@@ -69,6 +69,17 @@ router.post('/request-link', async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+
+    // Handle duplicate username error
+    if (error.code === '23505' && error.constraint === 'users_username_key') {
+      return res.status(400).json({ error: 'This username is already taken. Please choose a different username.' });
+    }
+
+    // Handle duplicate email error
+    if (error.code === '23505' && error.constraint === 'users_email_key') {
+      return res.status(400).json({ error: 'An account with this email already exists.' });
+    }
+
     res.status(500).json({ error: 'Server error' });
   }
 });
