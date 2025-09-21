@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Bitcoin Investment Game - A gamified investment platform where users start with 1 virtual Bitcoin and attempt to outperform holding BTC by trading it for stocks and commodities. All values are measured in satoshis instead of fiat currency, providing a Bitcoin-centric perspective on investing.
 
+## Database Migrations
+
+Migrations auto-run on `npm run dev` to prevent drift between developers. Place SQL files in `migrations/001-schema`, `002-functions`, or `003-seed-data` directories.
+
 ## Technical Commands for AI Development
 
 ```bash
