@@ -8,12 +8,6 @@
     "start": "node server.js",
     "build": "echo 'Build complete'",
     "migrate": "node scripts/migrate.js",
-    "setup-db": "node scripts/setup-database.js",
-    "update-db": "node scripts/add-suggestions-table.js",
-    "update-db:kiro": "node scripts/add-kiro-enhancements.js",
-    "update-db:portfolio-sharing": "node scripts/add-portfolio-sharing-enhancements.js",
-    "update-db:expanded-assets": "node scripts/add-expanded-assets.js",
-    "update-db:purchase-tracking": "node scripts/add-purchase-tracking.js",
     "backup-db": "node scripts/backup-database.js",
     "unify-db": "node scripts/unify-database.js"
   },
