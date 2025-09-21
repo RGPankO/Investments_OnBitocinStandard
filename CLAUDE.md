@@ -8,7 +8,7 @@ Bitcoin Investment Game - A gamified investment platform where users start with 
 
 ## Database Migrations
 
-Migrations auto-run on `npm run dev` to prevent drift between developers. Place SQL files in `migrations/001-schema`, `002-functions`, or `003-seed-data` directories.
+Scripts auto-run on `npm run dev` to prevent drift between developers. The migration system tracks which existing scripts have been executed.
 
 ## Technical Commands for AI Development
 

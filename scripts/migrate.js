@@ -1,8 +1,6 @@
 #!/usr/bin/env node
-const fs = require('fs');
-const path = require('path');
+const { execSync } = require('child_process');
 const pool = require('../config/database');
-
 
 async function runMigrations() {
     try {
@@ -10,55 +8,45 @@ async function runMigrations() {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS migrations (
                 id SERIAL PRIMARY KEY,
-                name VARCHAR(255) UNIQUE NOT NULL,
+                script_name VARCHAR(255) UNIQUE NOT NULL,
                 executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
-        // Find all SQL files in migrations directories
-        const migrationsPath = path.join(__dirname, '../migrations');
-        const dirs = ['001-schema', '002-functions', '003-seed-data'];
-        const migrations = [];
+        // List of data update scripts in order
+        const scripts = [
+            'setup-database.js',
+            'add-suggestions-table.js',
+            'add-kiro-enhancements.js',
+            'add-portfolio-sharing-enhancements.js',
+            'add-expanded-assets.js',
+            'add-purchase-tracking.js'
+        ];
 
-        for (const dir of dirs) {
-            const dirPath = path.join(migrationsPath, dir);
-            if (!fs.existsSync(dirPath)) {
-                fs.mkdirSync(dirPath, { recursive: true });
-                continue;
-            }
+        // Check which scripts have been run
+        const result = await pool.query('SELECT script_name FROM migrations');
+        const executed = new Set(result.rows.map(r => r.script_name));
 
-            const files = fs.readdirSync(dirPath)
-                .filter(f => f.endsWith('.sql'))
-                .sort();
-
-            for (const file of files) {
-                migrations.push({
-                    name: `${dir}/${file}`,
-                    path: path.join(dirPath, file)
-                });
-            }
-        }
-
-        // Check which migrations have been run
-        const result = await pool.query('SELECT name FROM migrations');
-        const executed = new Set(result.rows.map(r => r.name));
-
-        // Run pending migrations
+        // Run pending scripts
         let count = 0;
-        for (const migration of migrations) {
-            if (!executed.has(migration.name)) {
-                const sql = fs.readFileSync(migration.path, 'utf8');
-                await pool.query(sql);
-                await pool.query('INSERT INTO migrations (name) VALUES ($1)', [migration.name]);
-                console.log(`✓ Applied: ${migration.name}`);
-                count++;
+        for (const script of scripts) {
+            if (!executed.has(script)) {
+                try {
+                    execSync(`node scripts/${script}`, { stdio: 'inherit' });
+                    await pool.query('INSERT INTO migrations (script_name) VALUES ($1)', [script]);
+                    console.log(`✓ Applied: ${script}`);
+                    count++;
+                } catch (error) {
+                    console.error(`Failed to run ${script}:`, error.message);
+                    throw error;
+                }
             }
         }
 
         if (count === 0) {
             console.log('✓ Database is up to date');
         } else {
-            console.log(`✓ Applied ${count} migration(s)`);
+            console.log(`✓ Applied ${count} script(s)`);
         }
 
     } catch (error) {
