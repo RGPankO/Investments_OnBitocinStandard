@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+const fs = require('fs');
+const path = require('path');
 const { execSync } = require('child_process');
 const pool = require('../config/database');
 
@@ -8,46 +10,33 @@ async function runMigrations() {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS migrations (
                 id SERIAL PRIMARY KEY,
-                script_name VARCHAR(255) UNIQUE NOT NULL,
+                filename VARCHAR(255) UNIQUE NOT NULL,
                 executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
-        // List of data update scripts in order
-        const scripts = [
-            'setup-database.js',
-            'add-suggestions-table.js',
-            'add-kiro-enhancements.js',
-            'add-portfolio-sharing-enhancements.js',
-            'add-expanded-assets.js',
-            'add-purchase-tracking.js'
-        ];
+        // Get all migration files
+        const migrationsDir = path.join(__dirname, '../migrations');
+        const files = fs.readdirSync(migrationsDir)
+            .filter(f => f.endsWith('.js'))
+            .sort();
 
-        // Check which scripts have been run
-        const result = await pool.query('SELECT script_name FROM migrations');
-        const executed = new Set(result.rows.map(r => r.script_name));
+        // Check which have been run
+        const result = await pool.query('SELECT filename FROM migrations');
+        const executed = new Set(result.rows.map(r => r.filename));
 
-        // Run pending scripts
+        // Run pending migrations
         let count = 0;
-        for (const script of scripts) {
-            if (!executed.has(script)) {
-                try {
-                    execSync(`node scripts/${script}`, { stdio: 'inherit' });
-                    await pool.query('INSERT INTO migrations (script_name) VALUES ($1)', [script]);
-                    console.log(`✓ Applied: ${script}`);
-                    count++;
-                } catch (error) {
-                    console.error(`Failed to run ${script}:`, error.message);
-                    throw error;
-                }
+        for (const file of files) {
+            if (!executed.has(file)) {
+                console.log(`Running: ${file}`);
+                execSync(`node migrations/${file}`, { stdio: 'inherit' });
+                await pool.query('INSERT INTO migrations (filename) VALUES ($1)', [file]);
+                count++;
             }
         }
 
-        if (count === 0) {
-            console.log('✓ Database is up to date');
-        } else {
-            console.log(`✓ Applied ${count} script(s)`);
-        }
+        console.log(count > 0 ? `✓ Applied ${count} migration(s)` : '✓ Database up to date');
 
     } catch (error) {
         console.error('Migration failed:', error.message);

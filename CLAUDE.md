@@ -8,7 +8,10 @@ Bitcoin Investment Game - A gamified investment platform where users start with 
 
 ## Database Migrations
 
-Scripts auto-run on `npm run dev` to prevent drift between developers. The migration system tracks which existing scripts have been executed.
+Auto-runs on `npm run dev`. Add numbered files to `migrations/` directory:
+- Format: `NNN-description.js` (e.g., `007-new-feature.js`)
+- Runs sequentially, tracks what's been executed
+- See `migrations/README.md` for current list
 
 ## Technical Commands for AI Development
 
